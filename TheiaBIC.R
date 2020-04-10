@@ -1,6 +1,14 @@
 #packages
 libraries <-  c("readxl","readxlsb","dplyr","ggplot2","ggpubr")
+
 lapply(libraries,require,character.only=TRUE)
+
+## aded by Raul (spread)
+library(tidyr)
+
+#####FAIRE ATTENTION
+
+### Changed some of the WD 
 
 #data import
 #formula/process
@@ -18,7 +26,10 @@ setwd("C:/Users/deboodt.j/Procter and Gamble/Theia_BIC - Documents/Master files/
 FS <- suppressWarnings(read_excel(
   "Master file mechanical properties iNano.xlsm",sheet="Summary",guess_max = 1048576))
 #performance
-setwd("C:/Users/deboodt.j/Procter and Gamble/Theia_BIC - Documents/Master files/3_Performance")
+
+########RAul CHANGED
+
+setwd("C:/Users/rodrigogomez.r/Procter and Gamble/Theia_BIC - Documents/Master files/3_Performance")
 fabrics <-suppressWarnings(read_excel(
   "Master file Fabrics WM Results.xlsx",sheet="Summary",guess_max = 1048576))
 leakage <- read_excel("Master file Leakage Results.xlsm", sheet= "Summary")
@@ -30,7 +41,8 @@ PSD_Occhio_number <- filter(PSD_Occhio,`Diameter based on area or perimeter`=="A
 PSD_Occhio_volume <- filter(PSD_Occhio,`Diameter based on area or perimeter`=="Area-based" & PSD_Occhio$`Number/Area/Volume`=="volume")
 
 #data aggregation
-fabrics_aggregated_RelHS <- fabrics %>% group_by(`Touch point`,`Slurry ID`,`Perfume level`, Matrix) %>% summarize(RelHS=mean(`Reference comparison`),RelHSSD=mean(`Reference comparison`))
+fabrics_aggregated_RelHS <- fabrics %>% group_by(`Touch point`,`Slurry ID`,`Perfume level`, Perfume, Matrix) %>% summarize(RelHS=mean(`Reference comparison`),RelHSSD=mean(`Reference comparison`))
+
 fabrics_aggregated_AbsHS <- fabrics %>% group_by(`Touch point`,`Slurry ID`,`Perfume level`, `PRM name`, Matrix) %>% summarize(RelHS=mean(`PRM value`),RelHSSD=mean(`PRM value`))
 PSD_Occhio_volume_aggregated <- PSD_Occhio_volume %>% group_by(`Slurry ID`,`Number/Area/Volume`) %>% summarize(D50=mean(`P50`))
 PSD_Accusizer_Aggregated <- PSD_Accusizer %>% group_by(`Slurry.ID`,`Column2`) %>% summarize(D50=mean(`d50`))
@@ -72,6 +84,47 @@ DFO <- ggplot(fabrics_FS_correlation_DFO) +
   geom_point(aes(x=`RF_Dv50`,y=`RelHS`, color=`Slurry ID`))+
   ggtitle("Relative dry fabrics headspace vs rupture force at Dv50")
 ggarrange(WFO,DFO, ncol = 2,nrow=1,common.legend=TRUE)
+
+###ADDED by Raul
+
+fabrics_aggregated_RelHS <- fabrics %>% group_by(`Wash test date`,`Touch point`,`Slurry ID`,`Perfume level`, Perfume, Matrix, `Slurry info`) %>% summarize(RelHS=mean(`Reference comparison`),RelHSSD=mean(`Reference comparison`))
+
+
+#Filtering for Theia Capsules
+fabrics_aggregated_RelHS_1<- fabrics_aggregated_RelHS[grepl("CAP", fabrics_aggregated_RelHS$`Slurry ID`), ]
+fabrics_aggregated_RelHS_2<- fabrics_aggregated_RelHS[grepl("CAP", fabrics_aggregated_RelHS$`Slurry info`), ]
+
+
+
+Theia_Capsules_Fabrics<-rbind(fabrics_aggregated_RelHS_1, fabrics_aggregated_RelHS_2)
+
+
+## traspose table
+Theia_Capsules_Fabrics_touchpoints<-pivot_wider(data=Theia_Capsules_Fabrics, id_cols=c(`Slurry ID`,`Slurry info`,`Perfume level`,Perfume,`Wash test date`, Matrix), names_from=`Touch point`, values_from = c("RelHS","RelHSSD" ))
+
+# remove NA values
+Theia_Capsules_Fabrics_touchpoints<-subset(Theia_Capsules_Fabrics_touchpoints, select=-c(RelHS_NA,RelHSSD_NA))
+
+Theia_Capsules_Fabrics_touchpoints<-Theia_Capsules_Fabrics_touchpoints%>%drop_na("RelHS_DFO","RelHSSD_DFO","RelHS_WFO","RelHSSD_WFO")
+
+# writer csv file
+
+Theia_Capsules_Fabrics_touchpoints<-apply(Theia_Capsules_Fabrics_touchpoints,2, as.character)
+write.csv(Theia_Capsules_Fabrics_touchpoints,"C:/Users/rodrigogomez.r/Procter and Gamble/Theia_BIC - Documents/Master files/3_Performance/Theia_Capsules_Fabrics_touchpoints.csv", row.names = FALSE)
+
+
+
+#### NEEDED????
+leakage$`PRM leakage_value vs ref`<-sapply(leakage[, leakage$`PRM leakage_value vs ref`], )
+
+as.numeric(leakage$`PRM leakage_value vs ref`)
+leakage_aggregated <- leakage %>% group_by(`Slurry ID`,`Perfume level`,Perfume, Matrix,`Slurry info` ) %>% summarize(Leakage=mean(`PRM leakage_value vs ref`),LeakageSD=mean(`PRM leakage_value vs ref`))
+
+leakage_aggregated_1<- leakage_aggregated[grepl("CAP", leakage_aggregated$`Slurry ID`), ]
+leakage_aggregated_2<- leakage_aggregated[grepl("CAP", leakage_aggregated$`Slurry info`), ]
+Theia_Capsules_leakage<-rbind(leakage_aggregated_1, leakage_aggregated_2)
+
+
 
 #Clear environment
 #rm(list = ls(all.names = TRUE))
