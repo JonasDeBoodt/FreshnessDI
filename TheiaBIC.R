@@ -89,6 +89,7 @@ ggarrange(WFO,DFO, ncol = 2,nrow=1,common.legend=TRUE)
 
 fabrics_aggregated_RelHS <- fabrics %>% group_by(`Wash test date`,`Touch point`,`Slurry ID`,`Perfume level`, Perfume, Matrix, `Slurry info`) %>% summarize(RelHS=mean(`Reference comparison`),RelHSSD=mean(`Reference comparison`))
 
+fabrics_aggregated_RelHS<-as.data.frame(fabrics_aggregated_RelHS)
 
 #Filtering for Theia Capsules
 fabrics_aggregated_RelHS_1<- fabrics_aggregated_RelHS[grepl("CAP", fabrics_aggregated_RelHS$`Slurry ID`), ]
@@ -100,7 +101,14 @@ Theia_Capsules_Fabrics<-rbind(fabrics_aggregated_RelHS_1, fabrics_aggregated_Rel
 
 
 ## traspose table
-Theia_Capsules_Fabrics_touchpoints<-pivot_wider(data=Theia_Capsules_Fabrics, id_cols=c(`Slurry ID`,`Slurry info`,`Perfume level`,Perfume,`Wash test date`, Matrix), names_from=`Touch point`, values_from = c("RelHS","RelHSSD" ))
+
+#TODO: create a unique identifier (concatenate Slurry ID+ washing machine plus matrix)
+
+Theia_Capsules_Fabrics$unique<-paste(Theia_Capsules_Fabrics$"Slurry ID","///",Theia_Capsules_Fabrics$"Wash test date","///",Theia_Capsules_Fabrics$Matrix)
+
+
+
+Theia_Capsules_Fabrics_touchpoints<-pivot_wider(data=Theia_Capsules_Fabrics, id_cols=c(`Slurry ID`,`Slurry info`,Perfume,`Wash test date`, Matrix,unique), names_from=`Touch point`, values_from = c("RelHS","RelHSSD" ))
 
 # remove NA values
 Theia_Capsules_Fabrics_touchpoints<-subset(Theia_Capsules_Fabrics_touchpoints, select=-c(RelHS_NA,RelHSSD_NA))
