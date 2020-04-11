@@ -26,10 +26,7 @@ setwd("C:/Users/deboodt.j/Procter and Gamble/Theia_BIC - Documents/Master files/
 FS <- suppressWarnings(read_excel(
   "Master file mechanical properties iNano.xlsm",sheet="Summary",guess_max = 1048576))
 #performance
-
-########RAul CHANGED
-
-setwd("C:/Users/rodrigogomez.r/Procter and Gamble/Theia_BIC - Documents/Master files/3_Performance")
+setwd("C:/Users/deboodt.j/Procter and Gamble/Theia_BIC - Documents/Master files/3_Performance")
 fabrics <-suppressWarnings(read_excel(
   "Master file Fabrics WM Results.xlsx",sheet="Summary",guess_max = 1048576))
 leakage <- read_excel("Master file Leakage Results.xlsm", sheet= "Summary")
@@ -87,6 +84,10 @@ ggarrange(WFO,DFO, ncol = 2,nrow=1,common.legend=TRUE)
 
 ###ADDED by Raul
 
+setwd("C:/Users/rodrigogomez.r/Procter and Gamble/Theia_BIC - Documents/Master files/3_Performance")
+fabrics <-suppressWarnings(read_excel(
+  "Master file Fabrics WM Results.xlsx",sheet="Summary",guess_max = 1048576))
+
 fabrics_aggregated_RelHS <- fabrics %>% group_by(`Wash test date`,`Touch point`,`Slurry ID`,`Perfume level`, Perfume, Matrix, `Slurry info`) %>% summarize(RelHS=mean(`Reference comparison`),RelHSSD=mean(`Reference comparison`))
 
 fabrics_aggregated_RelHS<-as.data.frame(fabrics_aggregated_RelHS)
@@ -102,13 +103,8 @@ Theia_Capsules_Fabrics<-rbind(fabrics_aggregated_RelHS_1, fabrics_aggregated_Rel
 
 ## traspose table
 
-#TODO: create a unique identifier (concatenate Slurry ID+ washing machine plus matrix)
 
-Theia_Capsules_Fabrics$unique<-paste(Theia_Capsules_Fabrics$"Slurry ID","///",Theia_Capsules_Fabrics$"Wash test date","///",Theia_Capsules_Fabrics$Matrix)
-
-
-
-Theia_Capsules_Fabrics_touchpoints<-pivot_wider(data=Theia_Capsules_Fabrics, id_cols=c(`Slurry ID`,`Slurry info`,Perfume,`Wash test date`, Matrix,unique), names_from=`Touch point`, values_from = c("RelHS","RelHSSD" ))
+Theia_Capsules_Fabrics_touchpoints<-pivot_wider(data=Theia_Capsules_Fabrics, id_cols=c(`Slurry ID`,`Slurry info`,Perfume, `Perfume level`,`Wash test date`, Matrix), names_from=`Touch point`, values_from = c("RelHS","RelHSSD" ))
 
 # remove NA values
 Theia_Capsules_Fabrics_touchpoints<-subset(Theia_Capsules_Fabrics_touchpoints, select=-c(RelHS_NA,RelHSSD_NA))
@@ -117,8 +113,26 @@ Theia_Capsules_Fabrics_touchpoints<-Theia_Capsules_Fabrics_touchpoints%>%drop_na
 
 # writer csv file
 
-Theia_Capsules_Fabrics_touchpoints<-apply(Theia_Capsules_Fabrics_touchpoints,2, as.character)
+#Theia_Capsules_Fabrics_touchpoints<-apply(Theia_Capsules_Fabrics_touchpoints,2, as.character)
 write.csv(Theia_Capsules_Fabrics_touchpoints,"C:/Users/rodrigogomez.r/Procter and Gamble/Theia_BIC - Documents/Master files/3_Performance/Theia_Capsules_Fabrics_touchpoints.csv", row.names = FALSE)
+
+
+
+#####used to find the way to reach the csv
+
+Theia_Capsules_Fabrics_touchpoints_1<-pivot_wider(data=fabrics_aggregated_RelHS_1, id_cols=c(`Slurry ID`,`Slurry info`,Perfume,`Perfume level`,`Wash test date`, Matrix), names_from=`Touch point`, values_from = c("RelHS","RelHSSD" ))
+Theia_Capsules_Fabrics_touchpoints_2<-pivot_wider(data=fabrics_aggregated_RelHS_2, id_cols=c(`Slurry ID`,`Slurry info`,Perfume,`Perfume level`,`Wash test date`, Matrix), names_from=`Touch point`, values_from = c("RelHS","RelHSSD" ))
+
+fabrics_aggregated_RelHS_2<-fabrics_aggregated_RelHS_2%>%drop_na()
+
+which(duplicated(which(duplicated(fabrics_aggregated_RelHS_2))))
+
+which(duplicated(Theia_Capsules_Fabrics))
+Theia_Capsules_Fabrics<-Theia_Capsules_Fabrics[c(-178),]
+which(duplicated(Theia_Capsules_Fabrics))
+
+Theia_Capsules_Fabrics$unique<-paste(Theia_Capsules_Fabrics$"Slurry ID","///",Theia_Capsules_Fabrics$"Wash test date","///",Theia_Capsules_Fabrics$Matrix)
+
 
 
 
